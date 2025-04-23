@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digit Error Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    input {
+      margin: 10px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Digit Error Analyzer</h1>
+  <p>请上传你的预测结果和标准答案（CSV格式）。</p>
+
+  <input type="file" id="predFile" accept=".csv" />
+  <input type="file" id="ansFile" accept=".csv" />
+  <button onclick="analyze()">开始分析</button>
+
+  <div id="result"></div>
+
+  <script>
+    let predData = [];
+    let ansData = [];
+
+    function parseCSV(file, callback) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const lines = reader.result.trim().split('\n');
+        const data = lines.slice(1).map(line => {
+          const [id, label] = line.split(',');
+          return { id: parseInt(id), label: parseInt(label) };
+        });
+        callback(data);
+      };
+      reader.readAsText(file);
+    }
+
+    function analyze() {
+      const predFile = document.getElementById('predFile').files[0];
+      const ansFile = document.getElementById('ansFile').files[0];
+
+      if (!predFile || !ansFile) {
+        alert('请上传两个CSV文件');
+        return;
+      }
+
+      parseCSV(predFile, data => {
+        predData = data.sort((a, b) => a.id - b.id);
+        parseCSV(ansFile, data2 => {
+          ansData = data2.sort((a, b) => a.id - b.id);
+          computeResult();
+        });
+      });
+    }
+
+    function computeResult() {
+      let correct = 0;
+      const total = ansData.length;
+      const stats = Array.from({ length: 10 }, () => ({ total: 0, wrong: 0 }));
+
+      for (let i = 0; i < total; i++) {
+        const trueLabel = ansData[i].label;
+        const predLabel = predData[i].label;
+
+        stats[trueLabel].total++;
+        if (trueLabel === predLabel) {
+          correct++;
+        } else {
+          stats[trueLabel].wrong++;
+        }
+      }
+
+      const accuracy = (100 * correct / total).toFixed(2);
+      let html = `<h2>✅ 总体准确率: ${accuracy}% (${correct}/${total})</h2>`;
+
+      html += `<table><tr><th>数字</th><th>总数</th><th>错误</th><th>错误率</th></tr>`;
+      for (let i = 0; i < 10; i++) {
+        const { total, wrong } = stats[i];
+        const errorRate = total ? ((100 * wrong / total).toFixed(2) + '%') : '-';
+        html += `<tr><td>${i}</td><td>${total}</td><td>${wrong}</td><td>${errorRate}</td></tr>`;
+      }
+      html += `</table>`;
+
+      document.getElementById('result').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
