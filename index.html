@@ -134,7 +134,7 @@
 <body>
   <div class="container">
     <h1>Digit Error Analyzer</h1>
-    <p>请上传你的预测结果和标准答案（CSV格式）。</p>
+    <p>请上传你的预测结果（CSV格式）。</p>
 
     <div class="upload-section">
       <div class="upload-row">
@@ -142,10 +142,12 @@
         <input type="file" id="predFile" accept=".csv" />
       </div>
 
-      <div class="upload-row">
-        <label for="ansFile">标准答案：</label>
-        <input type="file" id="ansFile" accept=".csv" />
-      </div>
+<!--      <div class="upload-row">-->
+<!--  <label for="ansFile">标准答案：</label>-->
+<!--        <label for="ansFile">标准答案：</label>-->
+<!--  <input type="file" id="ansFile" accept=".csv" disabled />-->
+<!--  <span id="ansFileStatus" style="color: #0f0; font-size: 0.9rem; margin-left: 10px;">标准答案已自动加载</span>-->
+<!--</div>-->
     </div>
 
     <div class="button-group">
@@ -174,108 +176,132 @@
   </div>
 
   <script>
-    let predData = [];
-    let ansData = [];
+  let predData = [];
+  let ansData = [];
 
-    // 开发者调试排行榜数据
-    const leaderboardData = [
-      { nickname: 'ZPQ', accuracy: 87.60, time: '2025.4.25 12:35' },
-      { nickname: 'XJL', accuracy: 75.10, time: '2025.4.25 13:16' },
-      { nickname: 'LY', accuracy: 98.60, time: '2025.4.25 18:21' },
-    ];
+  // 开发者调试排行榜数据
+  const leaderboardData = [
+    { nickname: 'ZPQ', accuracy: 87.60, time: '2025.4.25 12:35' },
+    { nickname: 'XJL', accuracy: 75.10, time: '2025.4.25 13:16' },
+    { nickname: 'LY', accuracy: 98.60, time: '2025.4.25 18:21' },
+  ];
 
-    function renderLeaderboard() {
-      const tbody = document.querySelector('#leaderboard tbody');
-      tbody.innerHTML = '';
+  function renderLeaderboard() {
+    const tbody = document.querySelector('#leaderboard tbody');
+    tbody.innerHTML = '';
 
-      leaderboardData
-        .sort((a, b) => b.accuracy - a.accuracy)
-        .forEach((entry, index) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${entry.nickname}</td>
-            <td>${entry.accuracy.toFixed(2)}%</td>
-            <td>${entry.time}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-    }
-
-    window.onload = renderLeaderboard;
-
-    function parseCSV(file, callback) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const lines = reader.result.trim().split('\n');
-        const data = lines.slice(1).map(line => {
-          const [id, label] = line.split(',');
-          return { id: parseInt(id), label: parseInt(label) };
-        });
-        callback(data);
-      };
-      reader.readAsText(file);
-    }
-
-    function analyze() {
-      const predFile = document.getElementById('predFile').files[0];
-      const ansFile = document.getElementById('ansFile').files[0];
-
-      if (!predFile || !ansFile) {
-        alert('请上传两个CSV文件');
-        return;
-      }
-
-      parseCSV(predFile, data => {
-        predData = data.sort((a, b) => a.id - b.id);
-        parseCSV(ansFile, data2 => {
-          ansData = data2.sort((a, b) => a.id - b.id);
-          computeResult();
-        });
+    leaderboardData
+      .sort((a, b) => b.accuracy - a.accuracy)
+      .forEach((entry, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${entry.nickname}</td>
+          <td>${entry.accuracy.toFixed(2)}%</td>
+          <td>${entry.time}</td>
+        `;
+        tbody.appendChild(tr);
       });
-    }
+  }
 
-    function computeResult() {
-      let correct = 0;
-      const total = ansData.length;
-      const stats = Array.from({ length: 10 }, () => ({ total: 0, wrong: 0 }));
+  window.onload = () => {
+    renderLeaderboard();
+    loadAnswerFile(); // 自动加载标准答案
+  };
 
-      for (let i = 0; i < total; i++) {
-        const trueLabel = ansData[i].label;
-        const predLabel = predData[i].label;
+  function parseCSV(fileContent, callback) {
+    const lines = fileContent.trim().split('\n');
+    const data = lines.slice(1).map(line => {
+      const [id, label] = line.split(',');
+      return { id: parseInt(id), label: parseInt(label) };
+    });
+    callback(data);
+  }
 
-        stats[trueLabel].total++;
-        if (trueLabel === predLabel) {
-          correct++;
-        } else {
-          stats[trueLabel].wrong++;
+  function loadAnswerFile() {
+    fetch('labels.csv')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('无法加载标准答案文件：labels.csv');
         }
-      }
+        return response.text();
+      })
+      .then(data => {
+        parseCSV(data, parsedData => {
+          ansData = parsedData.sort((a, b) => a.id - b.id);
+          alert('标准答案文件已成功加载');
+        });
+      })
+      .catch(error => {
+        console.error(error);
+        alert('加载标准答案文件失败，请检查文件是否存在或路径是否正确');
+      });
+  }
 
-      const accuracy = (100 * correct / total).toFixed(2);
-      let html = `<h2>✅ 总体准确率: ${accuracy}% (${correct}/${total})</h2>`;
+  function analyze() {
+    const predFile = document.getElementById('predFile').files[0];
 
-      html += `<table><tr><th>数字</th><th>总数</th><th>错误</th><th>错误率</th></tr>`;
-      for (let i = 0; i < 10; i++) {
-        const { total, wrong } = stats[i];
-        const errorRate = total ? ((100 * wrong / total).toFixed(2) + '%') : '-';
-        html += `<tr><td>${i}</td><td>${total}</td><td>${wrong}</td><td>${errorRate}</td></tr>`;
-      }
-      html += `</table>`;
+    if (!predFile) {
+      alert('请上传预测结果CSV文件');
+      return;
+    }
 
-      document.getElementById('result').innerHTML = html;
+    if (ansData.length === 0) {
+      alert('还未加载标准答案，请稍后重试');
+      return;
+    }
 
-      // 🧪 开发者手动设定昵称：这里可以改成你自己
-      const nickname = 'Test';
-      const now = new Date();
-      const timeStr = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const reader = new FileReader();
+    reader.onload = () => {
+      parseCSV(reader.result, data => {
+        predData = data.sort((a, b) => a.id - b.id);
+        computeResult();
+      });
+    };
+    reader.readAsText(predFile);
+  }
 
-      // 如果之前没有这个 nickname，才加入排行榜
-      if (!leaderboardData.some(entry => entry.nickname === nickname)) {
-        leaderboardData.push({ nickname, accuracy: parseFloat(accuracy), time: timeStr });
-        renderLeaderboard();
+  function computeResult() {
+    let correct = 0;
+    const total = ansData.length;
+    const stats = Array.from({ length: 10 }, () => ({ total: 0, wrong: 0 }));
+
+    for (let i = 0; i < total; i++) {
+      const trueLabel = ansData[i].label;
+      const predLabel = predData[i].label;
+
+      stats[trueLabel].total++;
+      if (trueLabel === predLabel) {
+        correct++;
+      } else {
+        stats[trueLabel].wrong++;
       }
     }
-  </script>
+
+    const accuracy = (100 * correct / total).toFixed(2);
+    let html = `<h2>✅ 总体准确率: ${accuracy}% (${correct}/${total})</h2>`;
+
+    html += `<table><tr><th>数字</th><th>总数</th><th>错误</th><th>错误率</th></tr>`;
+    for (let i = 0; i < 10; i++) {
+      const { total, wrong } = stats[i];
+      const errorRate = total ? ((100 * wrong / total).toFixed(2) + '%') : '-';
+      html += `<tr><td>${i}</td><td>${total}</td><td>${wrong}</td><td>${errorRate}</td></tr>`;
+    }
+    html += `</table>`;
+
+    document.getElementById('result').innerHTML = html;
+
+    // 🧪 开发者手动设定昵称：这里可以改成你自己
+    const nickname = 'Test';
+    const now = new Date();
+    const timeStr = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    // 如果之前没有这个 nickname，才加入排行榜
+    if (!leaderboardData.some(entry => entry.nickname === nickname)) {
+      leaderboardData.push({ nickname, accuracy: parseFloat(accuracy), time: timeStr });
+      renderLeaderboard();
+    }
+  }
+</script>
 </body>
 </html>
