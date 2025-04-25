@@ -7,16 +7,9 @@
   <style>
     @font-face {
       font-family: 'Pixel';
-      /*src: url('fusion-pixel-12px-proportional-zh_hans.ttf') format('truetype');*/
-      font-weight: normal;
-      font-style: normal;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background-color: #001cd9;
@@ -46,16 +39,11 @@
       animation: slideIn 1s ease-out forwards;
     }
 
-    p {
-      font-size: 1rem;
-      margin-bottom: 20px;
-    }
+    p { font-size: 1rem; margin-bottom: 20px; }
 
-    .button-group {
-      margin-top: 20px;
-    }
+    .button-group { margin-top: 20px; }
 
-    input[type="file"] {
+    input[type="file"], button {
       background-color: #fff;
       color: #000;
       font-family: 'Pixel', monospace;
@@ -67,19 +55,14 @@
       transition: transform 0.3s;
     }
 
-    input[type="file"]:hover {
+    input[type="file"]:hover, button:hover:not(:disabled) {
       transform: scale(1.05);
     }
 
     button {
-      background-color: #fff;
-      color: #000;
-      font-family: 'Pixel', monospace;
       border: 2px solid #fff;
       padding: 10px 20px;
       font-size: 1rem;
-      border-radius: 5px;
-      cursor: pointer;
       transition: background-color 0.3s, transform 0.3s;
     }
 
@@ -109,9 +92,7 @@
       text-align: center;
     }
 
-    th {
-      background-color: #0d1e8a;
-    }
+    th { background-color: #0d1e8a; }
 
     h2 {
       margin-top: 30px;
@@ -119,25 +100,25 @@
     }
 
     .upload-section label {
-    display: block;
-    font-size: 1rem;
-    margin: 15px 0 5px;
-    color: #fff;
+      display: block;
+      font-size: 1rem;
+      margin: 15px 0 5px;
+      color: #fff;
     }
 
     .upload-row {
-  display: flex;
-  align-items: center;
-  margin: 10px 0;
-  gap: 10px;
-  justify-content: center;
-}
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      gap: 10px;
+      justify-content: center;
+    }
 
-.upload-row label {
-  min-width: 100px;
-  text-align: right;
-  font-size: 1rem;
-}
+    .upload-row label {
+      min-width: 100px;
+      text-align: right;
+      font-size: 1rem;
+    }
 
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -152,63 +133,76 @@
 </head>
 <body>
   <div class="container">
-  <h1>Digit Error Analyzer</h1>
-  <p>请上传你的预测结果和标准答案（CSV格式）。</p>
+    <h1>Digit Error Analyzer</h1>
+    <p>请上传你的预测结果和标准答案（CSV格式）。</p>
 
-  <div class="upload-section">
-  <div class="upload-row">
-    <label for="predFile">预测结果：</label>
-    <input type="file" id="predFile" accept=".csv" />
-  </div>
+    <div class="upload-section">
+      <div class="upload-row">
+        <label for="predFile">预测结果：</label>
+        <input type="file" id="predFile" accept=".csv" />
+      </div>
 
-  <div class="upload-row">
-    <label for="ansFile">标准答案：</label>
-    <input type="file" id="ansFile" accept=".csv" />
-  </div>
-</div>
+      <div class="upload-row">
+        <label for="ansFile">标准答案：</label>
+        <input type="file" id="ansFile" accept=".csv" />
+      </div>
+    </div>
 
-  <div class="button-group">
-    <button onclick="analyze()">开始分析</button>
-  </div>
+    <div class="button-group">
+      <button onclick="analyze()">开始分析</button>
+    </div>
 
-  <div id="result"></div>
+    <div id="result"></div>
+
     <div id="leaderboard">
-  <h2>🏆 准确率排行榜</h2>
+      <h2>🏆 准确率排行榜</h2>
       <p>（仅接受第一次提交结果）</p>
-  <table>
-    <thead>
-      <tr>
-        <th>排名</th>
-        <th>昵称</th>
-        <th>准确率</th>
-        <th>提交时间</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1</td>
-        <td>ZPQ</td>
-        <td>87.60%</td>
-        <td>2025.4.25 12:35</td>
-      </tr>
-<!--      <tr>-->
-<!--        <td>2</td>-->
-<!--        <td>示例用户2</td>-->
-<!--        <td>95.43%</td>-->
-<!--      </tr>-->
-<!--      <tr>-->
-<!--        <td>3</td>-->
-<!--        <td>示例用户3</td>-->
-<!--        <td>92.10%</td>-->
-<!--      </tr>-->
-    </tbody>
-  </table>
-</div>
-</div>
+      <table>
+        <thead>
+          <tr>
+            <th>排名</th>
+            <th>昵称</th>
+            <th>准确率</th>
+            <th>提交时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 自动渲染 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <script>
     let predData = [];
     let ansData = [];
+
+    // 开发者调试排行榜数据
+    const leaderboardData = [
+      { nickname: 'ZPQ', accuracy: 87.60, time: '2025.4.25 12:35' },
+      { nickname: 'XJL', accuracy: NaN, time: '未提交' },
+      { nickname: 'LY', accuracy: NaN, time: '未提交' },
+    ];
+
+    function renderLeaderboard() {
+      const tbody = document.querySelector('#leaderboard tbody');
+      tbody.innerHTML = '';
+
+      leaderboardData
+        .sort((a, b) => b.accuracy - a.accuracy)
+        .forEach((entry, index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${entry.nickname}</td>
+            <td>${entry.accuracy.toFixed(2)}%</td>
+            <td>${entry.time}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+    }
+
+    window.onload = renderLeaderboard;
 
     function parseCSV(file, callback) {
       const reader = new FileReader();
@@ -270,6 +264,17 @@
       html += `</table>`;
 
       document.getElementById('result').innerHTML = html;
+
+      // 🧪 开发者手动设定昵称：这里可以改成你自己
+      const nickname = 'YourName';
+      const now = new Date();
+      const timeStr = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      // 如果之前没有这个 nickname，才加入排行榜
+      if (!leaderboardData.some(entry => entry.nickname === nickname)) {
+        leaderboardData.push({ nickname, accuracy: parseFloat(accuracy), time: timeStr });
+        renderLeaderboard();
+      }
     }
   </script>
 </body>
